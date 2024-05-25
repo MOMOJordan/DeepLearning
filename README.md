@@ -14,7 +14,9 @@ Some deep learning school projects :
 - Physics-Informed Neural Networks (PINNs) using Koopman operator. The Koopman operator is a theoretical framework used in dynamical systems to analyze the evolution of observables (functions of the state space) rather than the state variables themselves. It provides a linear perspective on nonlinear dynamical systems by transforming the original nonlinear system into an infinite-dimensional linear system. The Koopman operator theory allows for the application of linear techniques to study complex, nonlinear dynamics.
 
  ![image](https://github.com/MOMOJordan/DeepLearning/assets/86100448/de331d22-8fc0-4b9e-a001-6221d328a6cb)
+ 
  ![image](https://github.com/MOMOJordan/DeepLearning/assets/86100448/f7b98869-5e0a-47a1-92d3-10b7bb3c35d6)
+ 
  ![image](https://github.com/MOMOJordan/DeepLearning/assets/86100448/4aca575f-69c4-4282-9ba0-43a956f1d1c0)
 
 
