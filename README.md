@@ -19,5 +19,13 @@ Some deep learning school projects :
  
  ![image](https://github.com/MOMOJordan/DeepLearning/assets/86100448/4aca575f-69c4-4282-9ba0-43a956f1d1c0)
 
+- Transfer Learning
+Transfer learning is a machine learning technique where a model developed for a particular task is reused as the starting point for a model on a second, related task. This approach leverages the knowledge gained from the initial task to improve learning efficiency and performance on the new task, particularly when data is limited. 
+
+- Data Augmentation
+Data augmentation is a technique used to increase the diversity and quantity of training data without actually collecting new data. This is achieved by applying various transformations to existing data, such as rotations, translations, scaling, flipping, and adding noise. These transformations help the model generalize better by exposing it to a wider variety of scenarios.
+
+![image](https://github.com/MOMOJordan/DeepLearning/assets/86100448/74b4a0e4-2b51-4f29-b476-97874378a926)
+![image](https://github.com/MOMOJordan/DeepLearning/assets/86100448/398040ae-2002-4164-875c-999525f0d891)
 
 
