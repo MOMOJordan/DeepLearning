@@ -25,7 +25,8 @@ Transfer learning is a machine learning technique where a model developed for a 
 - Data Augmentation
 Data augmentation is a technique used to increase the diversity and quantity of training data without actually collecting new data. This is achieved by applying various transformations to existing data, such as rotations, translations, scaling, flipping, and adding noise. These transformations help the model generalize better by exposing it to a wider variety of scenarios.
 
-![image](https://github.com/MOMOJordan/DeepLearning/assets/86100448/74b4a0e4-2b51-4f29-b476-97874378a926)
+![image](https://github.com/MOMOJordan/DeepLearning/assets/86100448/70274f85-9d24-4f13-9967-3278bbc8e66d)
+
 ![image](https://github.com/MOMOJordan/DeepLearning/assets/86100448/398040ae-2002-4164-875c-999525f0d891)
 
 
