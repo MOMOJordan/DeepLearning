@@ -264,3 +264,35 @@ correlations = data.corrwith(data['TTEF_target']).sort_values(ascending=False)
 
 # Display the top features with the highest correlation
 print(correlations.head(20))
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Generate synthetic data with a non-linear relationship
+np.random.seed(0)
+x = np.linspace(-10, 10, 1000)
+y = 0.5 * x**2 - 3 * x + np.random.normal(0, 10, 1000)  # Quadratic relationship with noise
+
+# Create a DataFrame
+data = pd.DataFrame({'Feature': x, 'Target': y})
+
+# Rank the feature into quantiles (e.g., deciles)
+data['Feature_Quantile'] = pd.qcut(data['Feature'], q=10, duplicates='drop')
+
+# Calculate the mean of the target variable for each quantile
+quantile_means = data.groupby('Feature_Quantile')['Target'].mean().reset_index()
+
+# Convert quantile labels to a numerical format for plotting
+quantile_means['Quantile_Label'] = quantile_means['Feature_Quantile'].apply(lambda x: int(x.right.split(',')[0].replace('(', '')))
+
+# Plot the results
+plt.figure(figsize=(10, 6))
+plt.plot(quantile_means['Quantile_Label'], quantile_means['Target'], marker='o')
+plt.title('Mean of Target Variable by Feature Quantile')
+plt.xlabel('Feature Quantile')
+plt.ylabel('Mean of Target Variable')
+plt.xticks(quantile_means['Quantile_Label'], labels=[f"Q{i+1}" for i in range(len(quantile_means))])
+plt.grid(True)
+plt.show()
+
