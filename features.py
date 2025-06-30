@@ -352,4 +352,127 @@ link.springer.com
 +5
 .
 
+1. High-Frequency Lead-Lag Analysis
+Key Papers:
+"The Lead–Lag Relationship Between Spot and Futures Markets in Energy Sector Stocks"
+
+Focus: Intraday (1-minute) analysis of energy futures vs. spot prices.
+
+Key Findings:
+
+Futures lead equities by 5–30 minutes, with strongest effects during market openings.
+
+Liquidity and order flow imbalances drive lead-lag dynamics.
+
+Feature Ideas:
+
+Rolling cross-correlations (e.g., 10-min windows) to detect adaptive lags.
+
+Intraday seasonality adjustments (e.g., stronger leads at NYMEX open) 15.
+
+"Microstructure Noise and Realized Volatility in Oil Futures"
+
+Focus: High-frequency noise filtering for WTI futures.
+
+Feature Ideas:
+
+Bid-ask spread adjustments to mitigate microstructure noise.
+
+Realized volatility (10-min rolling std. dev.) as a leading indicator 7.
+
+2. Dynamic Lead-Lag Methods
+Key Papers:
+"The Time-Dependent Lead–Lag Relationship Between WTI and Brent"
+
+Method: Thermal Optimal Path (TOPS) to detect regime-specific lags.
+
+Key Findings:
+
+WTI leads Brent by 1–2 days during supply shocks (e.g., 2008 crisis).
+
+Feature Ideas:
+
+Event-driven lag features (e.g., OPEC announcements → 1-hour lag window).
+
+Rolling cointegration residuals for structural breaks 713.
+
+"Dynamic Lead-Lag Networks in Commodity Markets"
+
+Method: Wavelet coherence + Granger causality networks.
+
+Feature Ideas:
+
+Multi-scale leads (e.g., WTI leads TTEF at 10-min but lags at 1-hour).
+
+Network centrality metrics to quantify WTI’s influence 7.
+
+3. Volatility Spillovers & Jumps
+Key Papers:
+"Testing the Relationship Between Oil Equities and Oil Futures"
+
+Focus: Volatility spillovers and jump dynamics.
+
+Key Findings:
+
+WTI jumps (>2σ) predict TTEF returns within 15 minutes.
+
+Feature Ideas:
+
+Jump indicators (binary flags for extreme returns).
+
+Volatility ratios (WTI vol / TTEF vol) 113.
+
+"Crude Oil and Stock Markets: Causal Relationships in Tail"
+
+Method: Quantile regression for extreme events.
+
+Feature Ideas:
+
+Tail dependence metrics (e.g., 5% quantile co-movements) 13.
+
+4. Machine Learning & Hybrid Models
+Key Papers:
+"Forecasting the WTI Crude Oil Price by a Hybrid-Refined Method"
+
+Method: Combines PPM change-point detection with TVTP-MRS models.
+
+Key Findings:
+
+Structural breaks (e.g., financial crises) alter lead-lag relationships.
+
+Feature Ideas:
+
+Regime-switching indicators (e.g., Markov-switching residuals) 7.
+
+"Predicting the Price of WTI Crude Oil Using ANN and Chaos"
+
+Method: Chaos theory + ANN (HWP-CHAOS model).
+
+Key Findings:
+
+WTI exhibits chaotic properties (Lyapunov exponent > 0).
+
+Feature Ideas:
+
+Phase-space reconstruction (embedding dimension = 5, time delay = 1) 13.
+
+"Volatility Forecasting of Crude Oil Futures Based on Bi-LSTM-Attention"
+
+Method: Bi-LSTM with attention for event-driven volatility.
+
+Key Findings:
+
+Attention mechanism improves prediction during crises (e.g., COVID-19).
+
+Feature Ideas:
+
+News sentiment scores (e.g., COVID-19/geopolitical risk indices) 16.
+
+5. Practical Feature Extraction Guide
+Feature Type	Calculation	Source Paper
+Lagged WTI Returns	WTI_ret.shift(3) (30-min lag)	17
+Rolling Momentum	WTI_ret.rolling(5).mean()	13
+VECM Residuals	Cointegration deviations (WTI vs. TTEF)	7
+Jump Indicators	1 if abs(WTI_ret) > 2*std_1day	13
+Wavelet Coherence	Multi-scale CCF (pywt library)	713
 
