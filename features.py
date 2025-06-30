@@ -296,3 +296,60 @@ plt.xticks(quantile_means['Quantile_Label'], labels=[f"Q{i+1}" for i in range(le
 plt.grid(True)
 plt.show()
 
+1. “The Time-Dependent Lead–Lag Relationship Between WTI and Brent Crude Oil Spot Markets”
+Frontiers in Physics (2020)
+
+Applies the Thermal Optimal Path (TOPS) method to daily oil data from 1987–2017.
+
+Demonstrates a dynamic, event-conditioned lead–lag structure, with WTI often leading Brent, especially around crises 
+public.econ.duke.edu
++15
+frontiersin.org
++15
+sciencedirect.com
++15
+.
+
+2. “The Lead–Lag Relationship Between Spot and Futures Markets in Energy Sector Stocks”
+International Journal of Energy Economics and Policy (2020)
+
+Uses 1-minute intraday data for stock-specific energy futures vs. spot.
+
+Finds lead–lag effects lasting up to 30 minutes, with intraday high-frequency patterns 
+snf.no
++2
+econjournals.com
++2
+researchgate.net
++2
+.
+
+3. “Lead Lat Relationships Between Futures and Spot Prices”
+A PDF exploration of cointegration and Johansen multivariate analysis across commodity spot and futures.
+
+Useful for understanding policy-driven infections of lead dynamics 
+snf.no
++1
+econjournals.com
++1
+arxiv.org
++1
+research.cbs.dk
++1
+.
+
+4. “Testing the Relationship Between Oil Equities and Oil Futures”
+Duke Univ. Honors Thesis (2008)
+
+Studies oil futures vs. oil-equity returns correlation and volatility spillover.
+
+Focuses on jump behavior, proving correlation but also highlighting differences in vol dynamics 
+dergipark.org.tr
++5
+public.econ.duke.edu
++5
+link.springer.com
++5
+.
+
+
