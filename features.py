@@ -606,3 +606,53 @@ plt.title('R-squared Comparison')
 plt.tight_layout()
 plt.show()
 
+
+import pandas as pd
+import numpy as np
+from statsmodels.tsa.vector_ar.vecm import VECM, select_order, select_coint_rank
+from statsmodels.tsa.stattools import adfuller
+
+# Load data
+data = pd.read_csv('your_data.csv', parse_dates=['timestamp'])
+data.set_index('timestamp', inplace=True)
+
+# Select variables
+df = data[['oil_price', 'ttef_price']].dropna()
+
+# Check for unit roots (non-stationarity)
+def adf_check(series, name):
+    result = adfuller(series.dropna())
+    print(f'{name} ADF stat: {result[0]:.3f}, p-value: {result[1]:.3f}')
+
+adf_check(df['oil_price'], 'Oil')
+adf_check(df['ttef_price'], 'TTEF')
+
+# Select lag order (use differences automatically)
+lag_order = select_order(df, maxlags=10, deterministic="ci").selected_orders['aic']
+print("Selected lag order:", lag_order)
+
+# Select cointegration rank (Johansen test)
+coint_rank = select_coint_rank(df, det_order=0, k_ar_diff=lag_order).rank
+print("Selected cointegration rank:", coint_rank)
+
+# Fit VECM model
+vecm_model = VECM(df, k_ar_diff=lag_order, coint_rank=coint_rank, deterministic='ci')
+vecm_result = vecm_model.fit()
+
+# Error Correction Term (ECT): cointegration residuals (long-run mispricing)
+data['error_correction_term'] = vecm_result.resid.iloc[:, 0]
+
+# Lagged differenced variables (short-run dynamics)
+for i in range(lag_order):
+    data[f'doil_diff_lag{i+1}'] = df['oil_price'].diff().shift(i+1)
+    data[f'dttef_diff_lag{i+1}'] = df['ttef_price'].diff().shift(i+1)
+
+# Clean final feature set
+features = data[[
+    'error_correction_term',
+    *[f'doil_diff_lag{i+1}' for i in range(lag_order)],
+    *[f'dttef_diff_lag{i+1}' for i in range(lag_order)]
+]].dropna()
+
+print(features.head())
+
