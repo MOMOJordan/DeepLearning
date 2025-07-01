@@ -476,3 +476,133 @@ VECM Residuals	Cointegration deviations (WTI vs. TTEF)	7
 Jump Indicators	1 if abs(WTI_ret) > 2*std_1day	13
 Wavelet Coherence	Multi-scale CCF (pywt library)	713
 
+
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import lightgbm as lgb
+import shap
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Load your dataset
+# Replace 'your_dataset.csv' with the path to your dataset
+data = pd.read_csv('your_dataset.csv')
+
+# Assume the last column is the target and the rest are features
+X = data.iloc[:, :-1]  # Features
+y = data.iloc[:, -1]   # Target
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Linear Regression Model
+linear_model = LinearRegression()
+linear_model.fit(X_train, y_train)
+y_pred_linear = linear_model.predict(X_test)
+
+# Calculate performance metrics for the linear model
+mse_linear = mean_squared_error(y_test, y_pred_linear)
+r2_linear = r2_score(y_test, y_pred_linear)
+
+# LightGBM Model
+train_data = lgb.Dataset(X_train, label=y_train)
+test_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
+
+params = {
+    'objective': 'regression',
+    'metric': 'rmse',
+    'boosting_type': 'gbdt',
+    'num_leaves': 31,
+    'learning_rate': 0.05,
+    'feature_fraction': 0.9,
+    'verbose': 0
+}
+
+lgbm_model = lgb.train(params, train_data, valid_sets=[test_data], num_boost_round=100, early_stopping_rounds=10)
+y_pred_lgbm = lgbm_model.predict(X_test, num_iteration=lgbm_model.best_iteration)
+
+# Calculate performance metrics for the LightGBM model
+mse_lgbm = mean_squared_error(y_test, y_pred_lgbm)
+r2_lgbm = r2_score(y_test, y_pred_lgbm)
+
+# Print performance metrics
+print("Linear Model - Mean Squared Error:", mse_linear)
+print("Linear Model - R-squared:", r2_linear)
+print("LightGBM Model - Mean Squared Error:", mse_lgbm)
+print("LightGBM Model - R-squared:", r2_lgbm)
+
+# Residual analysis for Linear Regression
+residuals_linear = y_test - y_pred_linear
+
+plt.figure(figsize=(14, 6))
+plt.subplot(1, 2, 1)
+sns.scatterplot(x=y_pred_linear, y=residuals_linear)
+plt.axhline(y=0, color='r', linestyle='--')
+plt.xlabel('Predicted Values')
+plt.ylabel('Residuals')
+plt.title('Residual Plot for Linear Model')
+
+plt.subplot(1, 2, 2)
+sns.histplot(residuals_linear, kde=True)
+plt.title('Distribution of Residuals for Linear Model')
+plt.xlabel('Residuals')
+
+plt.tight_layout()
+plt.show()
+
+# Residual analysis for LightGBM
+residuals_lgbm = y_test - y_pred_lgbm
+
+plt.figure(figsize=(14, 6))
+plt.subplot(1, 2, 1)
+sns.scatterplot(x=y_pred_lgbm, y=residuals_lgbm)
+plt.axhline(y=0, color='r', linestyle='--')
+plt.xlabel('Predicted Values')
+plt.ylabel('Residuals')
+plt.title('Residual Plot for LightGBM Model')
+
+plt.subplot(1, 2, 2)
+sns.histplot(residuals_lgbm, kde=True)
+plt.title('Distribution of Residuals for LightGBM Model')
+plt.xlabel('Residuals')
+
+plt.tight_layout()
+plt.show()
+
+# SHAP value analysis for LightGBM
+explainer = shap.TreeExplainer(lgbm_model)
+shap_values = explainer.shap_values(X_test)
+
+plt.figure(figsize=(12, 6))
+shap.summary_plot(shap_values, X_test, plot_type="dot", show=False)
+plt.title('SHAP Summary Plot for LightGBM Model')
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(12, 6))
+shap.summary_plot(shap_values, X_test, plot_type="bar", show=False)
+plt.title('SHAP Feature Importance for LightGBM Model')
+plt.tight_layout()
+plt.show()
+
+# Compare the performance of the models
+models = ['Linear Regression', 'LightGBM']
+mse_scores = [mse_linear, mse_lgbm]
+r2_scores = [r2_linear, r2_lgbm]
+
+plt.figure(figsize=(12, 6))
+plt.subplot(1, 2, 1)
+sns.barplot(x=models, y=mse_scores)
+plt.title('Mean Squared Error Comparison')
+
+plt.subplot(1, 2, 2)
+sns.barplot(x=models, y=r2_scores)
+plt.title('R-squared Comparison')
+
+plt.tight_layout()
+plt.show()
+
