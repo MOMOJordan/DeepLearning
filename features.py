@@ -656,3 +656,217 @@ features = data[[
 
 print(features.head())
 
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+
+class IntradayFeatureGenerator:
+    def __init__(self, data, freq='1s'):
+        """
+        Initialize with a DataFrame containing:
+        - TTEF_price, CL_price, LCO_price, GN_price
+        - Optional: TTEF_high, TTEF_low, etc. for range features
+        """
+        self.data = data.copy()
+        self.freq = freq
+        self.set_time_params()
+        
+    def set_time_params(self):
+        """Convert time frequencies to rolling window sizes"""
+        self.time_mapping = {
+            '10s': 10,
+            '30s': 30,
+            '1min': 60,
+            '5min': 300,
+            '10min': 600,
+            '30min': 1800,
+            '1h': 3600
+        }
+    
+    def generate_all_features(self):
+        """Generate complete feature set"""
+        self.calculate_returns()
+        self.generate_volatility_features()
+        self.generate_momentum_features()
+        self.generate_spread_features()
+        self.generate_correlation_features()
+        self.generate_regime_features()
+        self.generate_zscore_features()
+        self.generate_interaction_features()
+        self.generate_shock_features()
+        self.clean_features()
+        return self.data
+    
+    def calculate_returns(self):
+        """Calculate log returns for all assets"""
+        assets = ['TTEF', 'CL', 'LCO', 'GN']
+        for asset in assets:
+            self.data[f'{asset}_return'] = np.log(self.data[f'{asset}_price'] / self.data[f'{asset}_price'].shift(1))
+            
+            # Multi-horizon returns
+            for period in ['10s', '1min', '5min', '10min']:
+                window = self.time_mapping[period]
+                self.data[f'{asset}_return_{period}'] = np.log(self.data[f'{asset}_price'] / self.data[f'{asset}_price'].shift(window))
+    
+    def generate_volatility_features(self):
+        """Create various volatility measures"""
+        assets = ['TTEF', 'CL', 'LCO', 'GN']
+        for asset in assets:
+            # Standard volatility
+            for period in ['1min', '5min', '10min']:
+                window = self.time_mapping[period]
+                self.data[f'{asset}_vol_{period}'] = self.data[f'{asset}_return'].rolling(window).std()
+            
+            # EWMA volatility
+            self.data[f'{asset}_vol_ewma_10min'] = self.data[f'{asset}_return'].ewm(span=600).std()
+            
+            # Range volatility (if high/low available)
+            if f'{asset}_high' in self.data.columns:
+                self.data[f'{asset}_range_10min'] = (self.data[f'{asset}_high'].rolling(600).max() - 
+                                                   self.data[f'{asset}_low'].rolling(600).min())
+            
+            # Volatility ratios
+            self.data[f'{asset}_vol_ratio_1m_5m'] = (self.data[f'{asset}_vol_1min'] / 
+                                                    self.data[f'{asset}_vol_5min'])
+            
+            # Vol of vol
+            self.data[f'{asset}_vol_of_vol'] = self.data[f'{asset}_vol_1min'].diff().rolling(300).std()
+    
+    def generate_momentum_features(self):
+        """Create trend and momentum indicators"""
+        assets = ['CL', 'LCO', 'GN']
+        for asset in assets:
+            # EMA cross features
+            self.data[f'{asset}_ema_5min'] = self.data[f'{asset}_price'].ewm(span=300).mean()
+            self.data[f'{asset}_ema_30min'] = self.data[f'{asset}_price'].ewm(span=1800).mean()
+            self.data[f'{asset}_momentum'] = self.data[f'{asset}_ema_5min'] - self.data[f'{asset}_ema_30min']
+            
+            # Lagged returns
+            for lag in ['10s', '30s', '1min', '5min']:
+                window = self.time_mapping[lag]
+                self.data[f'{asset}_return_lag_{lag}'] = self.data[f'{asset}_return'].shift(window)
+    
+    def generate_spread_features(self):
+        """Generate spread between commodities"""
+        # Price spreads
+        self.data['CL_LCO_spread'] = self.data['CL_price'] - self.data['LCO_price']
+        self.data['CL_GN_spread'] = self.data['CL_price'] - self.data['GN_price']
+        
+        # Spread changes
+        self.data['CL_LCO_spread_change'] = self.data['CL_LCO_spread'].diff()
+        self.data['CL_GN_spread_change'] = self.data['CL_GN_spread'].diff()
+        
+        # Normalized spreads
+        self.data['CL_LCO_spread_z'] = (self.data['CL_LCO_spread'] - 
+                                      self.data['CL_LCO_spread'].rolling(3600).mean()) / \
+                                     self.data['CL_LCO_spread'].rolling(3600).std()
+    
+    def generate_correlation_features(self):
+        """Rolling correlations between assets"""
+        windows = {'30min': 1800, '1h': 3600}
+        for window_name, window in windows.items():
+            self.data[f'corr_TTEF_CL_{window_name}'] = self.data['TTEF_return'].rolling(window).corr(self.data['CL_return'])
+            self.data[f'corr_TTEF_LCO_{window_name}'] = self.data['TTEF_return'].rolling(window).corr(self.data['LCO_return'])
+            self.data[f'corr_CL_LCO_{window_name}'] = self.data['CL_return'].rolling(window).corr(self.data['LCO_return'])
+        
+        # Rolling betas
+        self.data['beta_TTEF_CL'] = self.data['TTEF_return'].rolling(3600).cov(self.data['CL_return']) / \
+                                   self.data['CL_return'].rolling(3600).var()
+    
+    def generate_regime_features(self):
+        """Create market regime indicators"""
+        # Volatility regime
+        self.data['CL_vol_regime'] = (self.data['CL_vol_10min'] > 
+                                     self.data['CL_vol_10min'].rolling(3600).mean()).astype(int)
+        
+        # Trend regime
+        self.data['CL_trend_regime'] = (self.data['CL_momentum'] > 0).astype(int)
+        
+        # Combined regime
+        self.data['CL_highvol_uptrend'] = self.data['CL_vol_regime'] & self.data['CL_trend_regime']
+    
+    def generate_zscore_features(self):
+        """
+        Create Z-scores with different windows for mean and std
+        This helps detect short-term deviations from longer-term behavior
+        """
+        assets = ['CL', 'LCO', 'GN']
+        for asset in assets:
+            # Short mean (1min), long std (30min)
+            self.data[f'{asset}_z_1m_mean_30m_std'] = (
+                (self.data[f'{asset}_return'] - self.data[f'{asset}_return'].rolling(60).mean()) / 
+                self.data[f'{asset}_return'].rolling(1800).std()
+            )
+            
+            # Medium mean (5min), very long std (1h)
+            self.data[f'{asset}_z_5m_mean_1h_std'] = (
+                (self.data[f'{asset}_return'] - self.data[f'{asset}_return'].rolling(300).mean()) / 
+                self.data[f'{asset}_return'].rolling(3600).std()
+            )
+            
+            # Volatility z-score
+            self.data[f'{asset}_vol_z'] = (
+                (self.data[f'{asset}_vol_5min'] - self.data[f'{asset}_vol_5min'].rolling(1800).mean()) / 
+                self.data[f'{asset}_vol_5min'].rolling(1800).std()
+            )
+    
+    def generate_interaction_features(self):
+        """Create interaction terms between features"""
+        self.data['CL_return_vol_interaction'] = self.data['CL_return'] * self.data['CL_vol_5min']
+        self.data['CL_LCO_spread_vol_interaction'] = self.data['CL_LCO_spread'] * self.data['TTEF_vol_5min']
+        self.data['CL_momentum_regime_interaction'] = self.data['CL_momentum'] * self.data['CL_vol_regime']
+    
+    def generate_shock_features(self):
+        """Identify shock events"""
+        for asset in ['CL', 'LCO', 'GN']:
+            # Return shocks (volatility-adjusted)
+            self.data[f'{asset}_return_shock'] = (
+                (self.data[f'{asset}_return'].abs() > 
+                 2 * self.data[f'{asset}_return'].rolling(600).std()).astype(int)
+            
+            # Volatility shocks
+            vol_diff = self.data[f'{asset}_vol_5min'].diff()
+            self.data[f'{asset}_vol_shock'] = (
+                (vol_diff > 2 * vol_diff.rolling(1800).std()).astype(int)
+    
+    def clean_features(self):
+        """Handle missing values and infinite values"""
+        # Drop initial NaN values from rolling calculations
+        self.data.replace([np.inf, -np.inf], np.nan, inplace=True)
+        self.data.fillna(method='ffill', inplace=True)
+        self.data.fillna(0, inplace=True)
+        
+        # Standardize features (optional)
+        #scaler = StandardScaler()
+        #features_to_scale = [col for col in self.data.columns if 'return' not in col and 'price' not in col]
+        #self.data[features_to_scale] = scaler.fit_transform(self.data[features_to_scale])
+
+
+# Example usage
+if __name__ == "__main__":
+    # Load your data (assuming it has columns: TTEF_price, CL_price, LCO_price, GN_price)
+    # df = pd.read_csv('your_intraday_data.csv', parse_dates=['timestamp'], index_col='timestamp')
+    
+    # For demonstration, create mock data
+    np.random.seed(42)
+    dates = pd.date_range('2023-01-01', periods=86400, freq='S')
+    mock_data = {
+        'TTEF_price': 100 + np.cumsum(np.random.normal(0, 0.001, 86400)),
+        'CL_price': 75 + np.cumsum(np.random.normal(0, 0.002, 86400)),
+        'LCO_price': 78 + np.cumsum(np.random.normal(0, 0.0018, 86400)),
+        'GN_price': 3.5 + np.cumsum(np.random.normal(0, 0.0005, 86400)),
+        'TTEF_high': 100 + np.cumsum(np.random.normal(0.001, 0.0015, 86400)),
+        'TTEF_low': 100 + np.cumsum(np.random.normal(-0.001, 0.0015, 86400))
+    }
+    df = pd.DataFrame(mock_data, index=dates)
+    
+    # Generate features
+    generator = IntradayFeatureGenerator(df)
+    feature_df = generator.generate_all_features()
+    
+    # Display feature summary
+    print(f"Generated {len(feature_df.columns)} features:")
+    print(feature_df.iloc[-10:, -10:].head())  # Show last 10 features for last 10 timesteps
+    
+    # Optional: Save to CSV
+    # feature_df.to_csv('TTEF_intraday_features.csv')
